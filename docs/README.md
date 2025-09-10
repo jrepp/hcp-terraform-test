@@ -36,6 +36,7 @@ This project provides a **minimally complete** yet **production-ready** Terrafor
 │  - Namespaces - RBAC - Resource Quotas - Network Policies  │
 └─────────────────────────────────────────────────────────────┘
 ```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -49,7 +50,7 @@ This project provides a **minimally complete** yet **production-ready** Terrafor
 
 ```bash
 git clone <repository-url>
-cd hcp-terraform-test
+cd terraform-k8s-demo
 
 # Choose your environment
 cd environments/staging  # or environments/production
@@ -97,7 +98,6 @@ kubectl port-forward -n staging svc/grafana 3000:80
 .
 ├── README.md                    # This file
 ├── docs/                        # Documentation
-│   ├── README.md               # Comprehensive project documentation
 │   ├── deployment-guide.md      # Detailed deployment instructions
 │   ├── troubleshooting.md       # Common issues and solutions
 │   └── module-reference.md      # Module documentation
@@ -118,18 +118,17 @@ kubectl port-forward -n staging svc/grafana 3000:80
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   ├── terraform.tfvars.example
-│   │   └── certs/             # Self-signed certificates
+│   │   └── terraform.tfvars.example
 │   └── production/            # Production environment
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
 │       └── terraform.tfvars.example
 └── examples/                   # Usage examples
-    └── minimal-deployment/     # Simple deployment example
+    └── basic-deployment/       # Simple deployment example
 ```
 
-## 🧩 Available Modules
+## 🧩 Modules Overview
 
 ### Core Infrastructure
 - **`kubernetes-base`**: Namespaces, RBAC, network policies, resource quotas
@@ -145,77 +144,98 @@ kubectl port-forward -n staging svc/grafana 3000:80
 - **`nginx-app`**: Sample web application with HPA and monitoring
 - **`gitops`**: ArgoCD for GitOps-based deployment automation
 
-## 🎯 Deployment Options
+## 🛠️ Customization
 
-### 🚀 Quick Start (Minimal)
-Perfect for learning and testing:
-```bash
-cd examples/minimal-deployment
-terraform init && terraform apply
+### Environment-Specific Configuration
+
+Each environment (staging/production) can be customized independently:
+
+```hcl
+# environments/staging/terraform.tfvars
+environment = "staging"
+cluster_type = "microk8s"
+enable_letsencrypt = false  # Use self-signed certs for staging
+
+# environments/production/terraform.tfvars
+environment = "production"
+cluster_type = "gke"
+enable_letsencrypt = true   # Use Let's Encrypt for production
 ```
-
-### 🏗️ Staging Environment
-Development and validation:
-```bash
-cd environments/staging
-cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply
-```
-
-### 🏭 Production Environment
-Production-ready with high availability:
-```bash
-cd environments/production
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with production values
-terraform init && terraform apply
-```
-
-## 🔧 Customization
 
 ### Feature Flags
 
 Enable/disable components as needed:
 
 ```hcl
-# In terraform.tfvars
 enable_monitoring = true
 enable_istio = true
 enable_gitops = false      # Disable ArgoCD if not needed
 enable_topaz = false       # Disable authorization service
 ```
 
-### Environment-Specific Configuration
+### Resource Scaling
 
-Each environment can be customized independently:
+Adjust resources for your workload:
 
 ```hcl
-# Staging: Minimal resources, self-signed certs
-environment = "staging"
-cluster_type = "microk8s"
-enable_letsencrypt = false
+# Production-grade resources
+postgresql_config = {
+  storage_size = "100Gi"
+  architecture = "replication"
+}
 
-# Production: High availability, Let's Encrypt
-environment = "production"
-cluster_type = "gke"
-enable_letsencrypt = true
+nginx_config = {
+  replica_count = 5
+  hpa_config = {
+    max_replicas = 50
+  }
+}
 ```
 
 ## 🔐 Security Features
 
+### Network Security
 - **Network Policies**: Restrict pod-to-pod communication
 - **Service Mesh mTLS**: Automatic encryption between services
+- **Ingress TLS**: HTTPS termination with automatic certificates
+
+### Authentication & Authorization
 - **RBAC**: Kubernetes role-based access control
-- **TLS Everywhere**: HTTPS termination with automatic certificates
-- **Authorization**: Fine-grained access control with OpenFGA/Topaz.sh
+- **Service Accounts**: Minimal privilege principle
+- **OpenFGA Integration**: Fine-grained authorization with Topaz.sh
+
+### Secrets Management
+- **Kubernetes Secrets**: Encrypted storage of sensitive data
+- **External Secrets**: Integration ready for external secret stores
+- **TLS Certificates**: Automated certificate lifecycle management
 
 ## 📊 Monitoring & Observability
 
+### Metrics Collection
 - **Prometheus**: Metrics collection and storage
 - **Grafana**: Visualization and dashboards
 - **AlertManager**: Alert routing and notification
-- **Distributed Tracing**: Request tracing with Jaeger (via Istio)
+
+### Application Monitoring
 - **Custom Dashboards**: Pre-configured for each service
+- **Health Checks**: Readiness and liveness probes
+- **Service Monitors**: Automatic metrics discovery
+
+### Distributed Tracing
+- **Jaeger Integration**: Request tracing across services
+- **Istio Tracing**: Automatic trace collection
+
+## 🔄 GitOps Integration
+
+### ArgoCD Setup
+- **Multi-Project Support**: Separate projects for different teams
+- **RBAC Integration**: Role-based access to applications
+- **Auto-Sync Policies**: Automated deployment with controls
+
+### Application Management
+- **Declarative Config**: Applications defined as code
+- **Progressive Delivery**: Canary deployments and rollbacks
+- **Sync Policies**: Automated or manual synchronization
 
 ## 🌍 Multi-Cloud Support
 
@@ -227,19 +247,22 @@ Tested and validated on:
 
 ## 📖 Documentation
 
-- **[Comprehensive Guide](docs/README.md)**: Detailed project documentation
 - **[Deployment Guide](docs/deployment-guide.md)**: Step-by-step deployment instructions
+- **[Module Reference](docs/module-reference.md)**: Detailed module documentation
 - **[Troubleshooting](docs/troubleshooting.md)**: Common issues and solutions
 
-Each environment is configured through:
-- `main.tf` - Module instantiation and configuration
-- `variables.tf` - Environment-specific variables
-- `terraform.tfvars` - Variable values (not committed to git)
-- `outputs.tf` - Environment outputs
+## 🤝 Contributing
+
+This project is designed for learning and demonstration. Key areas for contribution:
+
+1. **Additional Modules**: Create modules for other services
+2. **Cloud Providers**: Add provider-specific optimizations
+3. **Security Enhancements**: Implement additional security measures
+4. **Documentation**: Improve examples and use cases
 
 ## 🎓 Learning Objectives
 
-This project demonstrates:
+This project helps you learn:
 
 ### Terraform Best Practices
 - **Module Design**: Creating reusable, composable modules
@@ -252,50 +275,28 @@ This project demonstrates:
 - **Service Discovery**: Internal and external service exposure
 
 ### Cloud Native Technologies
-- **Service Mesh**: Traffic management and security with Istio
+- **Service Mesh**: Traffic management and security
 - **Observability**: Metrics, logging, and tracing
-- **GitOps**: Continuous deployment with ArgoCD
+- **GitOps**: Continuous deployment patterns
 
 ### DevOps Practices
 - **Infrastructure as Code**: Declarative infrastructure management
 - **Environment Promotion**: Consistent deployment across environments
 - **Security Integration**: Security as code principles
 
-## 🚀 What You Get
+## 📄 License
 
-After deployment, you'll have:
-
-✅ **Multi-environment Kubernetes infrastructure**  
-✅ **Production-ready monitoring stack**  
-✅ **Service mesh with automatic mTLS**  
-✅ **Automated certificate management**  
-✅ **GitOps deployment pipeline**  
-✅ **Database services (PostgreSQL, Redis, ClickHouse)**  
-✅ **Object storage (MinIO)**  
-✅ **Authorization service (Topaz.sh)**  
-✅ **Sample application with auto-scaling**  
-✅ **Network security policies**  
-✅ **Comprehensive documentation**  
-
-## 🎯 Use Cases
-
-- **Learning Platform**: Understand modern cloud-native technologies
-- **Development Environment**: Consistent dev/staging/prod environments
-- **Production Foundation**: Base for building production systems
-- **Architecture Reference**: Example of best practices implementation
-- **Training Material**: Hands-on experience with Terraform and Kubernetes
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🆘 Support
 
 For issues and questions:
 1. Check the [troubleshooting guide](docs/troubleshooting.md)
-2. Review the [deployment guide](docs/deployment-guide.md)
-3. Check module documentation for specific components
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+2. Review the [module documentation](docs/module-reference.md)
+3. Open an issue with detailed information about your environment
 
 ---
 
-**Ready to deploy modern cloud-native infrastructure? Let's get started! 🚀**
+**Happy Learning! 🚀**
+
+This project represents modern infrastructure practices and serves as a foundation for building production-ready Kubernetes deployments with Terraform.

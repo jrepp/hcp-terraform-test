@@ -1,0 +1,214 @@
+# environments/production/terraform.tfvars.example
+# Production Environment Configuration Example
+# Copy this file to terraform.tfvars and customize the values
+
+# Core Configuration
+environment     = "production"
+project_name    = "terraform-k8s-demo"
+domain_name     = "prod.example.com"
+
+# Kubernetes Configuration
+kubeconfig_path       = "~/.kube/config"
+kube_context         = null  # Use default context
+kubernetes_namespace = "production"
+cluster_type         = "production"  # or "gke", "eks", "aks"
+storage_class        = "fast-ssd"    # Use production storage class
+
+# Feature Flags - Production Configuration
+enable_monitoring       = true
+enable_istio           = true
+enable_cert_manager    = true
+enable_letsencrypt     = true
+enable_gitops          = true
+enable_topaz           = true
+enable_tls             = true
+enable_network_policies = true
+enable_tracing         = true
+enable_oidc            = false  # Enable if you have OIDC provider
+
+# Database Passwords (CHANGE THESE!)
+postgresql_password  = "changeme-production-postgres"
+database_password    = "changeme-production-db"
+redis_password      = "changeme-production-redis"
+clickhouse_password = "changeme-production-clickhouse"
+minio_password      = "changeme-production-minio"
+
+# Service Passwords (CHANGE THESE!)
+grafana_admin_password = "changeme-production-grafana"
+argocd_admin_password  = "changeme-production-argocd"
+
+# TLS Configuration
+letsencrypt_email = "admin@example.com"
+# For production TLS certificates (base64 encoded):
+# topaz_tls_cert = "LS0tLS1CRUdJTi..."
+# topaz_tls_key  = "LS0tLS1CRUdJTi..."
+
+# Network Configuration
+ingress_class = "istio"
+ingress_annotations = {
+  "cert-manager.io/cluster-issuer" = "letsencrypt-prod"
+  "kubernetes.io/tls-acme"         = "true"
+  "nginx.ingress.kubernetes.io/ssl-redirect" = "true"
+  "nginx.ingress.kubernetes.io/force-ssl-redirect" = "true"
+}
+
+# Production Scheduling
+node_selector = {
+  "node-role.kubernetes.io/worker" = "true"
+  "instance-type"                  = "production"
+}
+
+tolerations = [
+  {
+    key      = "production"
+    operator = "Equal"
+    value    = "true"
+    effect   = "NoSchedule"
+  }
+]
+
+# External Services (if any)
+external_services = {
+  # Example external database
+  # external_db = {
+  #   host = "db.example.com"
+  #   port = 5432
+  # }
+}
+
+# OIDC Configuration (if enabled)
+# oidc_config = {
+#   issuer_url        = "https://auth.example.com"
+#   client_id         = "argocd-production"
+#   client_secret     = "your-oidc-client-secret"
+#   requested_scopes  = ["openid", "profile", "email", "groups"]
+#   requested_id_token_claims = {
+#     groups = {
+#       essential = true
+#     }
+#   }
+#   logout_url = "https://auth.example.com/logout"
+# }
+
+# Repository Configuration for ArgoCD
+# repository_configs = [
+#   {
+#     name               = "production-apps"
+#     url                = "https://github.com/your-org/production-apps"
+#     type               = "git"
+#     username           = "git"
+#     password           = ""
+#     ssh_private_key    = ""
+#     insecure           = false
+#     enable_lfs         = false
+#     enable_oci         = false
+#   }
+# ]
+
+# ArgoCD Projects
+argocd_projects = [
+  {
+    name        = "production-apps"
+    description = "Production applications"
+    source_repos = [
+      "https://github.com/your-org/production-apps",
+      "https://github.com/your-org/production-infrastructure"
+    ]
+    destinations = [
+      {
+        name      = "in-cluster"
+        namespace = "production"
+        server    = "https://kubernetes.default.svc"
+      },
+      {
+        name      = "in-cluster"
+        namespace = "production-data"
+        server    = "https://kubernetes.default.svc"
+      }
+    ]
+    cluster_resource_whitelist = [
+      {
+        group = "*"
+        kind  = "*"
+      }
+    ]
+    namespace_resource_whitelist = [
+      {
+        group = "*"
+        kind  = "*"
+      }
+    ]
+    roles = [
+      {
+        name        = "admin"
+        description = "Production admin role"
+        policies = [
+          "p, proj:production-apps:admin, applications, *, production-apps/*, allow",
+          "p, proj:production-apps:admin, repositories, *, *, allow",
+          "p, proj:production-apps:admin, certificates, *, *, allow"
+        ]
+        groups = ["production-admins", "platform-team"]
+      },
+      {
+        name        = "deployer"
+        description = "Production deployer role"
+        policies = [
+          "p, proj:production-apps:deployer, applications, sync, production-apps/*, allow",
+          "p, proj:production-apps:deployer, applications, get, production-apps/*, allow",
+          "p, proj:production-apps:deployer, applications, action/*, production-apps/*, allow"
+        ]
+        groups = ["production-deployers", "ci-cd"]
+      },
+      {
+        name        = "viewer"
+        description = "Production viewer role"
+        policies = [
+          "p, proj:production-apps:viewer, applications, get, production-apps/*, allow"
+        ]
+        groups = ["production-viewers", "developers"]
+      }
+    ]
+  }
+]
+
+# ArgoCD Applications
+# argocd_applications = [
+#   {
+#     name         = "production-web-app"
+#     project      = "production-apps"
+#     namespace    = "production"
+#     source_repo  = "https://github.com/your-org/production-apps"
+#     source_path  = "web-app"
+#     source_branch = "main"
+#     auto_sync_policy = {
+#       automated = {
+#         prune       = true
+#         self_heal   = true
+#         allow_empty = false
+#       }
+#       sync_options = [
+#         "CreateNamespace=true",
+#         "PrunePropagationPolicy=foreground",
+#         "PruneLast=true"
+#       ]
+#       retry = {
+#         limit = 5
+#         backoff = {
+#           duration     = "5s"
+#           factor       = 2
+#           max_duration = "3m"
+#         }
+#       }
+#     }
+#     ignore_differences = [
+#       {
+#         group               = "apps"
+#         kind                = "Deployment"
+#         name                = ""
+#         namespace           = ""
+#         json_pointers       = ["/spec/replicas"]
+#         managed_fields_managers = []
+#       }
+#     ]
+#   }
+# ]

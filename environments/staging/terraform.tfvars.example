@@ -1,0 +1,51 @@
+# environments/staging/terraform.tfvars.example
+# Example terraform.tfvars file for staging environment
+# Copy this file to terraform.tfvars and customize the values
+
+# Basic environment configuration
+environment     = "staging"
+project_name    = "k8s-demo"
+domain_name     = "staging.local.dev"
+
+# Kubernetes configuration
+cluster_type         = "microk8s"  # Change to your cluster type: microk8s, docker-desktop, kind, etc.
+storage_class        = "microk8s-hostpath"  # Change to your storage class
+kubeconfig_path      = "~/.kube/config"
+kube_context         = ""  # Leave empty to use default context
+
+# Feature toggles
+enable_monitoring        = true
+enable_istio            = true
+enable_cert_manager     = true
+enable_gitops           = false  # Set to true if you want ArgoCD
+enable_topaz            = true
+enable_network_policies = true
+enable_debug            = false
+
+# Database passwords (CHANGE THESE IN PRODUCTION!)
+postgresql_password    = "postgres123"
+database_password      = "apppass123"
+redis_password         = "redis123"
+clickhouse_password    = "clickhouse123"
+minio_password         = "minio123456"
+grafana_admin_password = "admin123"
+argocd_admin_password  = "argocd123"
+
+# Resource configuration for staging
+resource_quotas = {
+  cpu_limit     = "2"
+  memory_limit  = "4Gi"
+  storage_limit = "20Gi"
+}
+
+replica_counts = {
+  web_apps   = 1
+  databases  = 1
+  monitoring = 1
+}
+
+# Development settings
+development_mode      = true
+auto_scaling_enabled  = true
+persistence_enabled   = true
+backup_retention_days = 3
