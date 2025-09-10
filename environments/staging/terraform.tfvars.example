@@ -9,7 +9,8 @@ domain_name     = "staging.local.dev"
 
 # Kubernetes configuration
 cluster_type         = "microk8s"  # Change to your cluster type: microk8s, docker-desktop, kind, etc.
-storage_class        = "microk8s-hostpath"  # Change to your storage class
+# COST ISSUE 4: Using expensive SSD storage class for staging (should use standard)
+storage_class        = "fast-ssd-premium"  # Expensive premium SSD storage
 kubeconfig_path      = "~/.kube/config"
 kube_context         = ""  # Leave empty to use default context
 
@@ -36,6 +37,16 @@ resource_quotas = {
   cpu_limit     = "2"
   memory_limit  = "4Gi"
   storage_limit = "20Gi"
+}
+
+# COST ISSUE 4: Excessive storage sizes for staging environment
+storage_configs = {
+  postgresql_storage_size = "1000Gi"    # 1TB for staging PostgreSQL (excessive)
+  redis_storage_size     = "500Gi"     # 500GB for Redis (way too much)
+  clickhouse_storage_size = "2000Gi"   # 2TB for ClickHouse analytics DB
+  minio_storage_size     = "5000Gi"    # 5TB for object storage
+  prometheus_storage_size = "1000Gi"   # 1TB for metrics retention
+  grafana_storage_size   = "100Gi"     # 100GB for Grafana dashboards
 }
 
 replica_counts = {

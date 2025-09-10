@@ -45,7 +45,17 @@ resource "helm_release" "postgresql" {
         storageClass = var.storage_class
       }
       
-      resources = var.postgresql_config.resources
+      # COST ISSUE 1: Excessive resource requests - 10x more CPU/memory than needed
+      resources = {
+        requests = {
+          cpu    = "4000m"    # 4 full CPUs (was likely 200m)
+          memory = "16Gi"     # 16GB RAM (was likely 512Mi)
+        }
+        limits = {
+          cpu    = "8000m"    # 8 full CPUs  
+          memory = "32Gi"     # 32GB RAM
+        }
+      }
       
       service = {
         type = "ClusterIP"
@@ -132,7 +142,8 @@ resource "helm_release" "redis" {
     }
     
     replica = var.redis_config.architecture == "replication" ? {
-      replicaCount = var.redis_config.replica_count
+      # COST ISSUE 2: Excessive replica count - 15 Redis replicas instead of 2-3
+      replicaCount = 15  # This creates 15 Redis replica pods consuming significant resources
       persistence = {
         enabled      = true
         size         = var.redis_config.storage_size
