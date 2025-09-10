@@ -44,26 +44,34 @@ resource "kubernetes_service_account" "app" {
 }
 
 # Create cluster role for the service account with minimal permissions
-resource "kubernetes_cluster_role" "app" {
+# Create a role with minimal permissions
+resource "kubernetes_role" "app_role" {
+  count = var.enable_rbac ? 1 : 0
+  
   metadata {
-    name = "${var.environment}-app-role"
-    
-    labels = merge(var.common_labels, {
-      "app.kubernetes.io/component" = "cluster-role"
-    })
+    namespace = kubernetes_namespace.main.metadata[0].name
+    name      = "${var.project_name}-app-role"
+    labels    = var.common_labels
   }
 
-  # Minimal permissions - only what's needed for the application
+  # SECURITY ISSUE 1: Overly permissive RBAC - allows access to all secrets and pods
   rule {
     api_groups = [""]
-    resources  = ["pods", "services", "endpoints"]
-    verbs      = ["get", "list", "watch"]
+    resources  = ["pods", "services", "configmaps", "secrets"]
+    verbs      = ["get", "list", "watch", "create", "update", "delete"]
   }
   
   rule {
     api_groups = ["apps"]
     resources  = ["deployments", "replicasets"]
-    verbs      = ["get", "list", "watch"]
+    verbs      = ["get", "list", "watch", "create", "update", "delete"]
+  }
+  
+  # Additional overly broad permissions
+  rule {
+    api_groups = [""]
+    resources  = ["*"]
+    verbs      = ["get", "list"]
   }
 }
 
