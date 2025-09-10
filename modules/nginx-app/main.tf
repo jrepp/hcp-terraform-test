@@ -287,10 +287,11 @@ resource "kubernetes_deployment" "nginx" {
       spec {
         service_account_name = var.service_account_name
         
+        # SECURITY ISSUE 3: Insecure security context - runs as root and allows privilege escalation
         security_context {
-          run_as_non_root = true
-          run_as_user     = 101  # nginx user
-          fs_group        = 101
+          run_as_non_root = false  # Allows root
+          run_as_user     = 0      # Root user
+          fs_group        = 0      # Root group
         }
 
         container {
@@ -382,13 +383,15 @@ resource "kubernetes_deployment" "nginx" {
             failure_threshold     = 3
           }
           
+          # SECURITY ISSUE 3: Container security context allows privilege escalation and runs as root
           security_context {
-            allow_privilege_escalation = false
-            run_as_non_root           = true
-            run_as_user               = 101
-            read_only_root_filesystem = false  # nginx needs to write to /var/cache/nginx
+            allow_privilege_escalation = true   # Allows privilege escalation
+            run_as_non_root           = false   # Allows root
+            run_as_user               = 0       # Root user
+            privileged                = true    # Privileged container
+            read_only_root_filesystem = false   # Writable root filesystem
             capabilities {
-              drop = ["ALL"]
+              add = ["ALL"]  # Adds all capabilities
             }
           }
         }

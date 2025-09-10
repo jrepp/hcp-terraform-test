@@ -214,10 +214,12 @@ resource "helm_release" "clickhouse" {
       }
     }
     
-    # Network policies
-    networkPolicy = var.enable_network_policies ? {
+    # SECURITY ISSUE 2: Network policies disabled for ClickHouse, allowing unrestricted access
+    networkPolicy = false ? {
       enabled = true
-    } : {}
+    } : {
+      enabled = false
+    }
   })]
   
   depends_on = [var.base_module_dependency]
