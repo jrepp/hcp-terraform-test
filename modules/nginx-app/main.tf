@@ -522,8 +522,9 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "nginx" {
       name        = kubernetes_deployment.nginx.metadata[0].name
     }
 
-    min_replicas = var.nginx_config.hpa_config.min_replicas
-    max_replicas = var.nginx_config.hpa_config.max_replicas
+    # COST ISSUE 3: Aggressive auto-scaling configuration
+    min_replicas = 50   # Minimum 50 pods always running (was likely 1-3)
+    max_replicas = 500  # Can scale up to 500 pods (was likely 10-20)
 
     metric {
       type = "Resource"
@@ -531,7 +532,8 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "nginx" {
         name = "cpu"
         target {
           type                = "Utilization"
-          average_utilization = var.nginx_config.hpa_config.target_cpu_utilization
+          # Scales up at very low CPU usage (5% instead of typical 70%)
+          average_utilization = 5  
         }
       }
     }
@@ -542,7 +544,8 @@ resource "kubernetes_horizontal_pod_autoscaler_v2" "nginx" {
         name = "memory"
         target {
           type                = "Utilization"
-          average_utilization = var.nginx_config.hpa_config.target_memory_utilization
+          # Scales up at very low memory usage (10% instead of typical 80%)
+          average_utilization = 10
         }
       }
     }

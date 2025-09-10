@@ -35,7 +35,8 @@ resource "helm_release" "prometheus_stack" {
     # Prometheus configuration
     prometheus = {
       prometheusSpec = {
-        retention = var.prometheus_config.retention
+        # COST ISSUE 5: Excessive metrics retention period (2 years instead of 15-30 days)
+        retention = "2y"  # 2 years of metrics retention costs significant storage
         
         storageSpec = {
           volumeClaimTemplate = {
@@ -44,7 +45,8 @@ resource "helm_release" "prometheus_stack" {
               accessModes      = ["ReadWriteOnce"]
               resources = {
                 requests = {
-                  storage = var.prometheus_config.storage_size
+                  # COST ISSUE 5: Massive storage allocation for metrics
+                  storage = "10Ti"  # 10 Terabytes for Prometheus storage
                 }
               }
             }
