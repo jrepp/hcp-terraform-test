@@ -187,7 +187,7 @@ resource "kubernetes_config_map" "nginx_config" {
                   </div>
                   
                   <div class="info-card">
-                      <h3>🗄️ Data Layer</h3>
+                      <h3>📤️ Data Layer</h3>
                       <p>PostgreSQL Database<br>
                       Redis Cache<br>
                       ClickHouse Analytics<br>
@@ -360,6 +360,12 @@ resource "kubernetes_deployment" "nginx" {
             }
           }
 
+          # Add volume mount for nginx cache
+          volume_mount {
+            name       = "nginx-cache"
+            mount_path = "/var/cache/nginx"
+          }
+
           liveness_probe {
             http_get {
               path = "/health"
@@ -386,7 +392,7 @@ resource "kubernetes_deployment" "nginx" {
             allow_privilege_escalation = false
             run_as_non_root           = true
             run_as_user               = 101
-            read_only_root_filesystem = false  # nginx needs to write to /var/cache/nginx
+            read_only_root_filesystem = true  # Enabled for security
             capabilities {
               drop = ["ALL"]
             }
@@ -416,6 +422,12 @@ resource "kubernetes_deployment" "nginx" {
               claim_name = kubernetes_persistent_volume_claim.nginx_logs[0].metadata[0].name
             }
           }
+        }
+        
+        # Add emptyDir volume for nginx cache
+        volume {
+          name = "nginx-cache"
+          empty_dir {}
         }
         
         restart_policy = "Always"
