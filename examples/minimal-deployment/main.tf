@@ -145,7 +145,7 @@ module "nginx_app" {
   
   nginx_config = {
     image_repository = "nginx"
-    image_tag        = "1.25-alpine"
+    image_tag        = "1.25-alpine@sha256:6a2f8b28e45c4adea04ec207a251fd4a2df03ddc930f8d33871a0b9abf4f3dbb"
     replica_count    = 1  # Single replica
     
     resources = {
